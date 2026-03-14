@@ -9,8 +9,10 @@ from tracker.activity_capture import get_auto_capture_status, start_auto_capture
 from tracker.db import (
     add_artifact,
     add_focus_session,
+    add_sprint_task,
     add_work_block,
     delete_artifact,
+    delete_sprint_task,
     delete_work_block,
     get_active_focus_session,
     get_sprint_tasks,
@@ -1411,17 +1413,41 @@ def render_daily_progress(work_date: str, summary: dict) -> None:
 
 def render_sprint_plan(selected_date: date) -> None:
     st.markdown('<div class="section-title">14-Day Sprint Command</div>', unsafe_allow_html=True)
-    if st.button("Seed 14-Day Plan"):
-        inserted = seed_14_day_plan(selected_date)
-        if inserted > 0:
-            st.success(f"Added {inserted} sprint tasks.")
-        else:
-            st.info("Plan already exists for this date window.")
+
+    seed_col, add_col = st.columns(2)
+    with seed_col:
+        if st.button("Seed 14-Day Plan"):
+            inserted = seed_14_day_plan(selected_date)
+            if inserted > 0:
+                st.success(f"Added {inserted} sprint tasks.")
+            else:
+                st.info("Plan already exists for this date window.")
+
+    st.markdown('<div class="form-shell">', unsafe_allow_html=True)
+    st.markdown('<div class="micro-title">Add Custom Task</div>', unsafe_allow_html=True)
+    with st.form("add_sprint_task_form"):
+        t_left, t_mid, t_right = st.columns(3)
+        with t_left:
+            task_title = st.text_input("Task Title", placeholder="Write KQL brute-force detection rule")
+        with t_mid:
+            track = st.selectbox("Track", ["SC-200", "Lab", "Assignment", "Project", "Artifact", "Review", "Personal"])
+            task_date = st.date_input("Due Date", value=selected_date)
+        with t_right:
+            priority = st.number_input("Priority", min_value=1, max_value=10, value=2, step=1)
+        submitted = st.form_submit_button("Add Task")
+        if submitted:
+            if not task_title.strip():
+                st.error("Task needs a title.")
+            else:
+                add_sprint_task(task_date.isoformat(), track, task_title.strip(), int(priority))
+                st.success("Task added.")
+                st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     end = selected_date + timedelta(days=13)
     tasks = get_sprint_tasks(selected_date.isoformat(), end.isoformat())
     if not tasks:
-        render_activity_panel("Sprint Queue", [], "No sprint tasks yet. Seed the 14-day plan to create a real execution queue.")
+        render_activity_panel("Sprint Queue", [], "No sprint tasks yet. Seed the 14-day plan or add your own tasks above.")
         return
 
     grouped: dict[str, list[dict]] = {}
@@ -1442,11 +1468,20 @@ def render_sprint_plan(selected_date: date) -> None:
 
     options = {f"{t['id']} | {t['task_date']} | {t['task_title']} ({t['status']})": t["id"] for t in tasks}
     st.markdown('<div class="form-shell">', unsafe_allow_html=True)
+    st.markdown('<div class="micro-title">Manage Task</div>', unsafe_allow_html=True)
     selected_label = st.selectbox("Selected Task", list(options.keys()))
     new_status = st.selectbox("New Status", ["todo", "doing", "done", "blocked"])
-    if st.button("Update Task Status"):
-        update_sprint_task_status(options[selected_label], new_status)
-        st.success("Task status updated.")
+    manage_left, manage_right = st.columns(2)
+    with manage_left:
+        if st.button("Update Status"):
+            update_sprint_task_status(options[selected_label], new_status)
+            st.success("Task status updated.")
+            st.rerun()
+    with manage_right:
+        if st.button("Delete Task"):
+            delete_sprint_task(options[selected_label])
+            st.warning("Task deleted.")
+            st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 

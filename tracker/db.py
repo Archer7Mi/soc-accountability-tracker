@@ -563,6 +563,26 @@ def update_sprint_task_status(task_id: int, status: str) -> None:
         )
 
 
+def add_sprint_task(task_date: str, track: str, task_title: str, priority: int) -> None:
+    with get_connection() as conn:
+        max_day = conn.execute(
+            "SELECT COALESCE(MAX(day_number), 0) FROM sprint_tasks WHERE task_date = ?",
+            (task_date,),
+        ).fetchone()[0]
+        conn.execute(
+            """
+            INSERT INTO sprint_tasks (day_number, task_date, track, task_title, priority, status)
+            VALUES (?, ?, ?, ?, ?, 'todo')
+            """,
+            (max_day if max_day > 0 else 1, task_date, track, task_title, priority),
+        )
+
+
+def delete_sprint_task(task_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM sprint_tasks WHERE id = ?", (task_id,))
+
+
 def seed_14_day_plan(start_day: date | None = None) -> int:
     if start_day is None:
         start_day = date.today()
