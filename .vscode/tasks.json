@@ -1,0 +1,32 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run SOC Tracker (Browser)",
+			"type": "shell",
+			"command": "py",
+			"args": [
+				"-m",
+				"streamlit",
+				"run",
+				"app.py"
+			],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "Run SOC Tracker (Desktop)",
+			"type": "shell",
+			"command": "py",
+			"args": [
+				"-w",
+				"launch.pyw"
+			],
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
