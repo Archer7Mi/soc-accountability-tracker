@@ -640,7 +640,10 @@ def render_activity_panel(title: str, rows: list[str], empty_message: str) -> No
     if not rows:
         st.markdown(f'<div class="tactical-panel"><div class="stack-note">{escape(empty_message)}</div></div>', unsafe_allow_html=True)
         return
-    st.markdown(f'<div class="tactical-panel">{"".join(rows)}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tactical-panel">', unsafe_allow_html=True)
+    for row in rows:
+        st.markdown(row, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def build_soc_artifact_report(artifact: dict) -> str:
