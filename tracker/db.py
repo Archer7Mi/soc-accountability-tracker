@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent.parent / "tracker.db"
@@ -635,7 +635,7 @@ def seed_14_day_plan(start_day: date | None = None) -> int:
     inserted = 0
     with get_connection() as conn:
         for day_number, track, task_title, priority in plan:
-            task_date = date.fromordinal(start_day.toordinal() + day_number - 1).isoformat()
+            task_date = (start_day + timedelta(days=day_number - 1)).isoformat()
             exists = conn.execute(
                 """
                 SELECT 1 FROM sprint_tasks
@@ -651,6 +651,59 @@ def seed_14_day_plan(start_day: date | None = None) -> int:
                 VALUES (?, ?, ?, ?, ?, 'todo')
                 """,
                 (day_number, task_date, track, task_title, priority),
+            )
+            inserted += 1
+    return inserted
+
+
+def seed_module_16_lab_tasks(start_day: date | None = None) -> int:
+    """Seed the exact CEH Module 16 – Hacking Wireless Networks lab tasks."""
+    if start_day is None:
+        start_day = date.today()
+
+    # Each entry: (day_offset, track, task_title, priority)
+    # Structured after the official EC-Council CEH Module 16 lab exercises.
+    plan = [
+        # ── Day 1: Lab 1 – Footprint Wireless Networks ──────────────────────
+        (1, "Lab", "Lab 1 Task 1: Footprint wireless networks using NetSurveyor", 1),
+        (1, "Lab", "Lab 1 Task 2: Footprint wireless networks using the Wash tool", 2),
+        (1, "Assignment", "Document lab environment and record any equipment gaps", 3),
+        # ── Day 2: Lab 2 – Wireless Traffic Analysis ────────────────────────
+        (2, "Lab", "Lab 2 Task 1: Analyze wireless network traffic using Wireshark", 1),
+        (2, "Artifact", "Log traffic-analysis screenshots and findings to repo", 2),
+        # ── Day 3: Lab 3 – Wireless Attacks (part 1) ────────────────────────
+        (3, "Lab", "Lab 3 Task 1a: Enable wireless monitor mode using airmon-ng", 1),
+        (3, "Lab", "Lab 3 Task 1b: Discover Wi-Fi networks using airodump-ng", 2),
+        (3, "Lab", "Lab 3 Task 1c: Capture WPA/WPA2 four-way handshake with airodump-ng", 3),
+        # ── Day 4: Lab 3 – Wireless Attacks (part 2) ────────────────────────
+        (4, "Lab", "Lab 3 Task 1d: Deauthenticate client to force handshake using aireplay-ng", 1),
+        (4, "Lab", "Lab 3 Task 1e: Crack WEP encryption using aircrack-ng", 2),
+        (4, "Lab", "Lab 3 Task 2: Crack WPA/WPA2 networks using Fern WiFi Cracker", 3),
+        # ── Day 5: Lab 3 part 3 + Lab 4 ─────────────────────────────────────
+        (5, "Lab", "Lab 3 Task 3: Break WPS-encrypted network using Reaver", 1),
+        (5, "Lab", "Lab 4 Task 1: Create a rogue access point using MANA Toolkit", 2),
+        (5, "Artifact", "Submit Module 16 lab evidence and screenshots to repo", 3),
+    ]
+
+    inserted = 0
+    with get_connection() as conn:
+        for day_offset, track, task_title, priority in plan:
+            task_date = (start_day + timedelta(days=day_offset - 1)).isoformat()
+            exists = conn.execute(
+                """
+                SELECT 1 FROM sprint_tasks
+                WHERE task_date = ? AND task_title = ?
+                """,
+                (task_date, task_title),
+            ).fetchone()
+            if exists:
+                continue
+            conn.execute(
+                """
+                INSERT INTO sprint_tasks (day_number, task_date, track, task_title, priority, status)
+                VALUES (?, ?, ?, ?, ?, 'todo')
+                """,
+                (day_offset, task_date, track, task_title, priority),
             )
             inserted += 1
     return inserted

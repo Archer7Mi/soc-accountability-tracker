@@ -18,6 +18,7 @@ from tracker.db import (
     get_sprint_tasks,
     get_week_data,
     seed_14_day_plan,
+    seed_module_16_lab_tasks,
     start_focus_session,
     stop_focus_session,
     update_artifact,
@@ -1422,6 +1423,13 @@ def render_sprint_plan(selected_date: date) -> None:
                 st.success(f"Added {inserted} sprint tasks.")
             else:
                 st.info("Plan already exists for this date window.")
+    with add_col:
+        if st.button("Seed Module 16 Lab Tasks"):
+            inserted = seed_module_16_lab_tasks(selected_date)
+            if inserted > 0:
+                st.success(f"Added {inserted} Module 16 lab tasks.")
+            else:
+                st.info("Module 16 tasks already exist for this date window.")
 
     st.markdown('<div class="form-shell">', unsafe_allow_html=True)
     st.markdown('<div class="micro-title">Add Custom Task</div>', unsafe_allow_html=True)
